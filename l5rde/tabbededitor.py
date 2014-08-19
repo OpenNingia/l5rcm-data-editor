@@ -62,14 +62,21 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         self.model = model
 
     def on_doc_added(self, doc):
+        '''upon a new document is added
+           build the widget to render the document
+           and add a new tab'''
+
         index = self.find_tab(doc)
         if index < 0:
             widget = self.widget_for_document(doc)
     	    index  = self.add_tab(widget, doc.name, hash(doc))
-        #else:
+
         self.set_current(index)
 
     def on_doc_status_changed(self, doc):
+        '''upon a document status changed
+           update the table caption'''
+
         tab_title = doc.name + "*" if doc.dirty else doc.name
         tab_color = QtCore.Qt.red if doc.dirty else QtCore.Qt.black
         print( 'status changed', tab_title, doc.status, doc.dirty )
@@ -79,9 +86,13 @@ class L5RCMTabbedEditor(QtGui.QWidget):
             self.tabs.setTabTextColor(index, tab_color)
 
     def on_doc_removed(self, doc):
-        print( repr(doc) )
+        '''should we close the tab if the document is removed in other ways?'''
+        pass
 
     def on_tab_close_requested(self, index):
+        '''when the user closes a tab we check if there is any unsaved work
+           and warn the user. Only then we remove the tab'''
+
         #TODO check document status and ask to save
         doc_hash = self.tabs.tabData(index)
         self.tabs.removeTab   (index)
@@ -91,6 +102,8 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         self.model.remove_doc_hash(doc_hash)
 
     def add_tab(self, widget, text, data = None):
+        '''add a new tab with the given widget and data'''
+
         index = self.tabs.addTab(text)
         self.tabs.setTabData(index, data)
         self.widgets.insertWidget(index, widget)
@@ -100,28 +113,33 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         return index
 
     def find_tab(self, doc):
-        print('search', doc)
+        '''find the tab index of the given document, if present'''
+
         for i in range(0, self.tabs.count()):
             print(i, self.tabs.tabData(i), hash(doc))
             if self.tabs.tabData(i) == hash(doc):
-                print('found at', i)
+
                 return i
         return -1
 
     def activate_document(self, doc):
+        '''activate the tab of the given document, if present'''
+
         index = self.find_tab( doc )
         if index >= 0:
             self.set_current(index)
 
     def set_current(self, index):
-        print('set current', index)
+        '''activate a tab by index'''
+
         self.tabs.setCurrentIndex(index)
 
     def widget_for_document(self, doc):
+        '''return the correct widget to render the document'''
+
         if os.path.basename(doc.path) == 'manifest':
             return ManifestWidget(doc, self)
         else:
             dw = DataListWidget(doc, self)
             dw.set_full_data( self.package_data )
             return dw
-        #return QtGui.QLabel(doc.path, self)
