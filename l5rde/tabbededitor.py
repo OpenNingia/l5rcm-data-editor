@@ -61,6 +61,9 @@ class L5RCMTabbedEditor(QtGui.QWidget):
 
         self.model = model
 
+    def hs(self, doc):
+        return str( hash(doc) )
+
     def on_doc_added(self, doc):
         '''upon a new document is added
            build the widget to render the document
@@ -69,7 +72,7 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         index = self.find_tab(doc)
         if index < 0:
             widget = self.widget_for_document(doc)
-    	    index  = self.add_tab(widget, doc.name, hash(doc))
+    	    index  = self.add_tab(widget, doc.name, self.hs(doc))
 
         self.set_current(index)
 
@@ -105,7 +108,12 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         '''add a new tab with the given widget and data'''
 
         index = self.tabs.addTab(text)
-        self.tabs.setTabData(index, data)
+
+        try:
+            self.tabs.setTabData(index, data)
+        except Exception as e:
+            print('ex', repr(e), e )
+
         self.widgets.insertWidget(index, widget)
 
         if hasattr(widget, 'load'):
@@ -116,9 +124,7 @@ class L5RCMTabbedEditor(QtGui.QWidget):
         '''find the tab index of the given document, if present'''
 
         for i in range(0, self.tabs.count()):
-            print(i, self.tabs.tabData(i), hash(doc))
-            if self.tabs.tabData(i) == hash(doc):
-
+            if self.tabs.tabData(i) == self.hs(doc):
                 return i
         return -1
 

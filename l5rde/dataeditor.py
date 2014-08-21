@@ -123,6 +123,7 @@ class DataEditor(QtGui.QMainWindow):
         self.package_data = None
 
         self.build_ui()
+        self.build_menu()
         #self.load_full_data()
 
 
@@ -141,6 +142,36 @@ class DataEditor(QtGui.QMainWindow):
         self.setWindowTitle(u"L5R: CM - Data Editor")
 
         self.resize( 900, 500 )
+
+    def build_menu(self):
+
+        # * File
+        # New Book...
+        # Open Book...
+        # Save
+        # ------------
+        # Exit
+        # # #
+        # * Book
+        # Add reference...
+        # Make datapack...
+        # ------------
+        # Add file...
+        # Add folder...
+        # * About
+        # About L5RDE
+
+
+        m_file  = self.menuBar().addMenu( "&File"  )
+        m_book  = self.menuBar().addMenu( "&Book"  )
+        m_about = self.menuBar().addMenu( "&About" )
+
+        # File
+        a_new_book  = m_file.addAction( "&New Book..." , self.on_new_book  )
+        a_open_book = m_file.addAction( "&Open Book...", self.on_open_book )
+        a_save      = m_file.addAction( "&Save"        , self.on_save      )
+        m_file.addSeparator()
+        a_exit      = m_file.addAction( "E&xit"        , self.close        )
 
     def build_sidebar(self):
         self.sidebar = DataSideBar(self)
@@ -218,6 +249,90 @@ class DataEditor(QtGui.QMainWindow):
             else:
                 print('error', path_)
 
+    def on_new_book(self):
+
+        if self.save_or_discard():
+            self.create_new_book()
+
+    def on_open_book(self):
+
+        if self.save_or_discard():
+            self.open_book()
+
+    def on_save(self):
+        pass
+
+    def create_new_book(self):
+
+        book_path = self.select_book_path()
+        if book_path:
+            self.close_current()
+            new_project_path = self.book_startup( book_path )
+            self.open_book   ( new_project_path )
+
+    def open_book(self, project_path = None):
+
+        if not project_path:
+            self.project_path = self.select_project_file()
+        else:
+            self.project_path = project_path
+
+        book_path = os.path.join( os.path.dirname( self.project_path ), 'book' )
+        self.load_package( book_path )
+
+    def select_project_file(self):
+        return None
+
+    def select_book_path(self):
+        dir_path = QtGui.QFileDialog.getExistingDirectory(
+            self,
+            "Create new book",
+            "/home",
+             QtGui.QFileDialog.ShowDirsOnly )
+
+        if os.path.exists( dir_path ):
+            return dir_path
+        return None
+
+    def save_or_discard(self):
+        return True
+
+    def close_current(self):
+        pass
+
+    def book_startup(self, path):
+
+        project_file = os.path.join( path, 'project.l5rde' )
+        with open( project_file, 'w' ) as fp:
+            j = {
+                'references': [],
+                'files': []
+            }
+
+            json.dump( j, fp )
+
+
+        manifest_file = os.path.join( path, 'book', 'manifest' )
+
+        try:
+            os.makedirs( os.path.join(path, 'book', 'xml') )
+        except:
+            pass
+            # pazienza
+
+        with open( manifest_file, 'w') as fp:
+            j = {
+                'id' : 'new_book',
+                'display_name': 'New book',
+                'authors': [],
+                'version': '1.0',
+                'min-cm-version' : '3.9.4'
+            }
+
+            json.dump( j, fp )
+
+        return project_file
+
 def launch_data_editor(data_pack_path):
     win = DataEditor()
     win.show()
@@ -234,10 +349,10 @@ def test():
     dlg = DataEditor()
     dlg.show()
 
-    if os.name == 'nt':
-        dlg.load_package("C:\\Documents and Settings\\cns_dasi\\Application Data\\openningia\\l5rcm\\core.data\\core")
-    else:
-        dlg.load_package("/home/daniele/.config/openningia/l5rcm/core.data/core")
+    #if os.name == 'nt':
+    #    dlg.load_package("C:\\Documents and Settings\\cns_dasi\\Application Data\\openningia\\l5rcm\\core.data\\core")
+    #else:
+    #    dlg.load_package("/home/daniele/.config/openningia/l5rcm/core.data/core")
     #dlg.load_package("C:\\Documents and Settings\\cns_dasi\\Application Data\\openningia\\l5rcm\\core.data\\core")
     sys.exit(app.exec_())
 
